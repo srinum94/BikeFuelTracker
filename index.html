@@ -22,6 +22,7 @@
     h1{
       text-align:center;
       color:#333;
+      margin-bottom:20px;
     }
 
     .card{
@@ -73,10 +74,17 @@
       color:white;
       border:none;
       cursor:pointer;
+      transition:0.3s;
+      position:relative;
     }
 
     button:hover{
       background:#005ea6;
+    }
+
+    button:disabled{
+      opacity:0.7;
+      cursor:not-allowed;
     }
 
     .reset-btn{
@@ -85,6 +93,41 @@
 
     .reset-btn:hover{
       background:#b52b27;
+    }
+
+    .delete-btn{
+      background:#d9534f;
+      padding:6px 10px;
+      border:none;
+      color:white;
+      border-radius:5px;
+      cursor:pointer;
+      width:auto;
+    }
+
+    .delete-btn:hover{
+      background:#a71d1d;
+    }
+
+    .spinner{
+      display:inline-block;
+      width:15px;
+      height:15px;
+      border:2px solid #fff;
+      border-top:2px solid transparent;
+      border-radius:50%;
+      animation:spin 0.7s linear infinite;
+      vertical-align:middle;
+      margin-right:8px;
+    }
+
+    @keyframes spin{
+      from{
+        transform:rotate(0deg);
+      }
+      to{
+        transform:rotate(360deg);
+      }
     }
 
     table{
@@ -123,7 +166,7 @@
 
   <h1>🏍 Bike Fuel Tracker</h1>
 
- <!-- STATS -->
+  <!-- STATS -->
   <div class="card">
 
     <div class="stats">
@@ -164,7 +207,7 @@
 
     </div>
 
-    <button onclick="saveSettings()">Save Settings</button>
+    <button onclick="saveSettings(this)">Save Settings ⚙️</button>
 
   </div>
 
@@ -179,21 +222,21 @@
     <label>Comment / Note</label>
     <textarea id="fuelComment" placeholder="Example: Filled at Indian Oil near office"></textarea>
 
-    <button onclick="addFuel()">Add Fuel</button>
+    <button onclick="addFuel(this)">⛽ Add Fuel</button>
 
   </div>
 
   <!-- TRAVEL -->
   <div class="card">
 
-    <h3>🛣 Distance Travelled</h3>
+    <h3>🏍 Distance Travelled 📌</h3>
 
     <input type="number" id="distance" placeholder="Example: 35">
 
     <label>Comment / Note</label>
     <textarea id="travelComment" placeholder="Example: Office to Home trip"></textarea>
 
-    <button onclick="addTravel()">Update Travel</button>
+    <button onclick="addTravel(this)">🏍 Update Travel 📌</button>
 
   </div>
 
@@ -210,6 +253,7 @@
           <th>Type</th>
           <th>Details</th>
           <th>Comment</th>
+          <th>Action</th>
         </tr>
       </thead>
 
@@ -224,7 +268,7 @@
 
     <h3>⚠ Reset All Records</h3>
 
-    <button class="reset-btn" onclick="resetData()">
+    <button class="reset-btn" onclick="resetData(this)">
       Reset Bike Records
     </button>
 
@@ -255,19 +299,43 @@ function saveData(){
 
 }
 
-function saveSettings(){
+function buttonLoader(button, callback){
 
-  data.mileage =
-    parseFloat(document.getElementById("mileage").value);
+  const originalText = button.innerHTML;
 
-  data.petrolPrice =
-    parseFloat(document.getElementById("petrolPrice").value);
+  button.disabled = true;
 
-  saveData();
+  button.innerHTML =
+    '<span class="spinner"></span>Processing...';
 
-  updateUI();
+  setTimeout(() => {
 
-  alert("Settings Saved");
+    callback();
+
+    button.disabled = false;
+    button.innerHTML = originalText;
+
+  }, 1000);
+
+}
+
+function saveSettings(button){
+
+  buttonLoader(button, () => {
+
+    data.mileage =
+      parseFloat(document.getElementById("mileage").value);
+
+    data.petrolPrice =
+      parseFloat(document.getElementById("petrolPrice").value);
+
+    saveData();
+
+    updateUI();
+
+    alert("Settings Saved");
+
+  });
 
 }
 
@@ -279,141 +347,194 @@ function getISTDate(){
 
 }
 
-function addFuel(){
+function addFuel(button){
 
-  const amount =
-    parseFloat(document.getElementById("amount").value);
+  buttonLoader(button, () => {
 
-  const comment =
-    document.getElementById("fuelComment").value;
+    const amount =
+      parseFloat(document.getElementById("amount").value);
 
-  if(!amount || amount <= 0){
+    const comment =
+      document.getElementById("fuelComment").value;
 
-    alert("Enter valid amount");
-    return;
+    if(!amount || amount <= 0){
 
-  }
-
-  const litres =
-    amount / data.petrolPrice;
-
-  data.remainingPetrol += litres;
-
-  const possibleDistance =
-    litres * data.mileage;
-
-  data.history.unshift({
-
-    type:"Fuel Refill",
-
-    details:
-      `₹${amount} → ${litres.toFixed(2)} L added → Can travel ${possibleDistance.toFixed(2)} KM`,
-
-    comment: comment || "-",
-
-    date:getISTDate(),
-
-    amount:amount
-
-  });
-
-  saveData();
-
-  updateUI();
-
-  document.getElementById("amount").value = "";
-  document.getElementById("fuelComment").value = "";
-
-}
-
-function addTravel(){
-
-  const distance =
-    parseFloat(document.getElementById("distance").value);
-
-  const comment =
-    document.getElementById("travelComment").value;
-
-  if(!distance || distance <= 0){
-
-    alert("Enter valid distance");
-    return;
-
-  }
-
-  const petrolUsed =
-    distance / data.mileage;
-
-  data.remainingPetrol -= petrolUsed;
-
-  if(data.remainingPetrol < 0){
-
-    data.remainingPetrol = 0;
-
-  }
-
-  data.history.unshift({
-
-    type:"Travel",
-
-    details:
-      `${distance} KM travelled → ${petrolUsed.toFixed(2)} L used`,
-
-    comment: comment || "-",
-
-    date:getISTDate()
-
-  });
-
-  saveData();
-
-  updateUI();
-
-  document.getElementById("distance").value = "";
-  document.getElementById("travelComment").value = "";
-
-}
-
-function resetData(){
-
-  const confirmReset =
-    confirm("Are you sure you want to clear all fuel and travel records?");
-
-  if(confirmReset){
-
-    const finalConfirm =
-      confirm("This action cannot be undone. Press OK again to DELETE all records.");
-
-    if(finalConfirm){
-
-      
- // Preserve settings
-      const savedMileage = data.mileage;
-      const savedPetrolPrice = data.petrolPrice;
-
-      // Reset only fuel/travel data
-      data = {
-
-        mileage: savedMileage,
-        petrolPrice: savedPetrolPrice,
-        remainingPetrol: 0,
-        history: []
-
-      };
-
-
-      saveData();
-
-      document.getElementById("mileage").value = data.mileage;
-      document.getElementById("petrolPrice").value = data.petrolPrice;
-
-      updateUI();
-
-      alert("Fuel and travel records cleared successfully.");
+      alert("Enter valid amount");
+      return;
 
     }
 
+    const litres =
+      amount / data.petrolPrice;
+
+    data.remainingPetrol += litres;
+
+    const possibleDistance =
+      litres * data.mileage;
+
+    data.history.unshift({
+
+      type:"Fuel Refill",
+
+      details:
+        `₹${amount} → ${litres.toFixed(2)} L added → Can travel ${possibleDistance.toFixed(2)} KM`,
+
+      comment: comment || "-",
+
+      date:getISTDate(),
+
+      amount:amount
+
+    });
+
+    saveData();
+
+    updateUI();
+
+    document.getElementById("amount").value = "";
+    document.getElementById("fuelComment").value = "";
+
+  });
+
+}
+
+function addTravel(button){
+
+  buttonLoader(button, () => {
+
+    const distance =
+      parseFloat(document.getElementById("distance").value);
+
+    const comment =
+      document.getElementById("travelComment").value;
+
+    if(!distance || distance <= 0){
+
+      alert("Enter valid distance");
+      return;
+
+    }
+
+    const petrolUsed =
+      distance / data.mileage;
+
+    data.remainingPetrol -= petrolUsed;
+
+    if(data.remainingPetrol < 0){
+
+      data.remainingPetrol = 0;
+
+    }
+
+    data.history.unshift({
+
+      type:"Travel",
+
+      details:
+        `${distance} KM travelled → ${petrolUsed.toFixed(2)} L used`,
+
+      comment: comment || "-",
+
+      date:getISTDate(),
+
+      distance:distance
+
+    });
+
+    saveData();
+
+    updateUI();
+
+    document.getElementById("distance").value = "";
+    document.getElementById("travelComment").value = "";
+
+  });
+
+}
+
+function deleteEntry(index){
+
+  const item = data.history[index];
+
+  const confirmDelete =
+    confirm("Are you sure you want to delete this entry?");
+
+  if(!confirmDelete){
+    return;
   }
+
+  if(item.type === "Fuel Refill"){
+
+    const litresAdded =
+      item.amount / data.petrolPrice;
+
+    data.remainingPetrol -= litresAdded;
+
+    if(data.remainingPetrol < 0){
+      data.remainingPetrol = 0;
+    }
+
+  }
+
+  if(item.type === "Travel"){
+
+    const petrolUsed =
+      item.distance / data.mileage;
+
+    data.remainingPetrol += petrolUsed;
+
+  }
+
+  data.history.splice(index,1);
+
+  saveData();
+
+  updateUI();
+
+  alert("Entry deleted successfully.");
+
+}
+
+function resetData(button){
+
+  buttonLoader(button, () => {
+
+    const confirmReset =
+      confirm("Are you sure you want to clear all fuel and travel records?");
+
+    if(confirmReset){
+
+      const finalConfirm =
+        confirm("This action cannot be undone. Press OK again to DELETE all records.");
+
+      if(finalConfirm){
+
+        const savedMileage = data.mileage;
+        const savedPetrolPrice = data.petrolPrice;
+
+        data = {
+
+          mileage: savedMileage,
+          petrolPrice: savedPetrolPrice,
+          remainingPetrol: 0,
+          history: []
+
+        };
+
+        saveData();
+
+        document.getElementById("mileage").value = data.mileage;
+        document.getElementById("petrolPrice").value = data.petrolPrice;
+
+        updateUI();
+
+        alert("Fuel and travel records cleared successfully.");
+
+      }
+
+    }
+
+  });
 
 }
 
@@ -448,7 +569,7 @@ function updateUI(){
 
   table.innerHTML = "";
 
-  data.history.forEach(item => {
+  data.history.forEach((item,index) => {
 
     table.innerHTML += `
 
@@ -469,6 +590,14 @@ function updateUI(){
         <td>${item.details}</td>
 
         <td>${item.comment}</td>
+
+        <td>
+          <button
+            class="delete-btn"
+            onclick="deleteEntry(${index})">
+            🗑 Delete
+          </button>
+        </td>
 
       </tr>
 
