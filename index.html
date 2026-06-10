@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bike Fuel Tracker</title>
+
+  <style>
+
+    body{
+      font-family: Arial, sans-serif;
+      background:#f4f6f9;
+      margin:0;
+      padding:20px;
+    }
+
+    .container{
+      max-width:1000px;
+      margin:auto;
+    }
+
+    h1{
+      text-align:center;
+      color:#333;
+    }
+
+    .card{
+      background:white;
+      padding:20px;
+      margin-bottom:20px;
+      border-radius:10px;
+      box-shadow:0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .top-grid,
+    .stats{
+      display:grid;
+      grid-template-columns: repeat(auto-fit,minmax(250px,1fr));
+      gap:15px;
+    }
+
+    .stat-box{
+      background:#e9f3ff;
+      padding:15px;
+      border-radius:8px;
+      text-align:center;
+    }
+
+    .stat-box h2{
+      margin:0;
+      color:#0078d7;
+    }
+
+    input,
+    textarea,
+    button{
+      width:100%;
+      padding:10px;
+      margin-top:10px;
+      border-radius:5px;
+      border:1px solid #ccc;
+      font-size:16px;
+      box-sizing:border-box;
+    }
+
+    textarea{
+      resize:vertical;
+      min-height:70px;
+    }
+
+    button{
+      background:#0078d7;
+      color:white;
+      border:none;
+      cursor:pointer;
+    }
+
+    button:hover{
+      background:#005ea6;
+    }
+
+    .reset-btn{
+      background:#d9534f;
+    }
+
+    .reset-btn:hover{
+      background:#b52b27;
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:15px;
+    }
+
+    th, td{
+      border:1px solid #ddd;
+      padding:10px;
+      text-align:center;
+    }
+
+    th{
+      background:#0078d7;
+      color:white;
+    }
+
+    .green{
+      color:green;
+      font-weight:bold;
+    }
+
+    .red{
+      color:red;
+      font-weight:bold;
+    }
+
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <h1>🏍 Bike Fuel Tracker</h1>
+
+ <!-- STATS -->
+  <div class="card">
+
+    <div class="stats">
+
+      <div class="stat-box">
+        <p>Remaining Petrol</p>
+        <h2 id="remainingPetrol">0 L</h2>
+      </div>
+
+      <div class="stat-box">
+        <p>Remaining Distance</p>
+        <h2 id="remainingDistance">0 KM</h2>
+      </div>
+
+      <div class="stat-box">
+        <p>Total Fuel Cost</p>
+        <h2 id="totalCost">₹0</h2>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="card">
+
+    <div class="top-grid">
+
+      <div>
+        <label><b>Bike Mileage (KM/L)</b></label>
+        <input type="number" id="mileage" />
+      </div>
+
+      <div>
+        <label><b>Petrol Price Per Litre (₹)</b></label>
+        <input type="number" id="petrolPrice" />
+      </div>
+
+    </div>
+
+    <button onclick="saveSettings()">Save Settings</button>
+
+  </div>
+
+  <!-- FUEL REFILL -->
+  <div class="card">
+
+    <h3>⛽ Fuel Refill</h3>
+
+    <label>Amount in Rupees</label>
+    <input type="number" id="amount" placeholder="Example: 150">
+
+    <label>Comment / Note</label>
+    <textarea id="fuelComment" placeholder="Example: Filled at Indian Oil near office"></textarea>
+
+    <button onclick="addFuel()">Add Fuel</button>
+
+  </div>
+
+  <!-- TRAVEL -->
+  <div class="card">
+
+    <h3>🛣 Distance Travelled</h3>
+
+    <input type="number" id="distance" placeholder="Example: 35">
+
+    <label>Comment / Note</label>
+    <textarea id="travelComment" placeholder="Example: Office to Home trip"></textarea>
+
+    <button onclick="addTravel()">Update Travel</button>
+
+  </div>
+
+  <!-- HISTORY -->
+  <div class="card">
+
+    <h3>📋 History</h3>
+
+    <table>
+
+      <thead>
+        <tr>
+          <th>Date & Time (IST)</th>
+          <th>Type</th>
+          <th>Details</th>
+          <th>Comment</th>
+        </tr>
+      </thead>
+
+      <tbody id="historyTable"></tbody>
+
+    </table>
+
+  </div>
+
+  <!-- RESET -->
+  <div class="card">
+
+    <h3>⚠ Reset All Records</h3>
+
+    <button class="reset-btn" onclick="resetData()">
+      Reset Bike Records
+    </button>
+
+  </div>
+
+</div>
+
+<script>
+
+let data = JSON.parse(localStorage.getItem("bikeFuelTracker")) || {
+
+  mileage: 40,
+  petrolPrice: 100,
+  remainingPetrol: 0,
+  history: []
+
+};
+
+document.getElementById("mileage").value = data.mileage;
+document.getElementById("petrolPrice").value = data.petrolPrice;
+
+function saveData(){
+
+  localStorage.setItem(
+    "bikeFuelTracker",
+    JSON.stringify(data)
+  );
+
+}
+
+function saveSettings(){
+
+  data.mileage =
+    parseFloat(document.getElementById("mileage").value);
+
+  data.petrolPrice =
+    parseFloat(document.getElementById("petrolPrice").value);
+
+  saveData();
+
+  updateUI();
+
+  alert("Settings Saved");
+
+}
+
+function getISTDate(){
+
+  return new Date().toLocaleString("en-IN",{
+    timeZone:"Asia/Kolkata"
+  });
+
+}
+
+function addFuel(){
+
+  const amount =
+    parseFloat(document.getElementById("amount").value);
+
+  const comment =
+    document.getElementById("fuelComment").value;
+
+  if(!amount || amount <= 0){
+
+    alert("Enter valid amount");
+    return;
+
+  }
+
+  const litres =
+    amount / data.petrolPrice;
+
+  data.remainingPetrol += litres;
+
+  const possibleDistance =
+    litres * data.mileage;
+
+  data.history.unshift({
+
+    type:"Fuel Refill",
+
+    details:
+      `₹${amount} → ${litres.toFixed(2)} L added → Can travel ${possibleDistance.toFixed(2)} KM`,
+
+    comment: comment || "-",
+
+    date:getISTDate(),
+
+    amount:amount
+
+  });
+
+  saveData();
+
+  updateUI();
+
+  document.getElementById("amount").value = "";
+  document.getElementById("fuelComment").value = "";
+
+}
+
+function addTravel(){
+
+  const distance =
+    parseFloat(document.getElementById("distance").value);
+
+  const comment =
+    document.getElementById("travelComment").value;
+
+  if(!distance || distance <= 0){
+
+    alert("Enter valid distance");
+    return;
+
+  }
+
+  const petrolUsed =
+    distance / data.mileage;
+
+  data.remainingPetrol -= petrolUsed;
+
+  if(data.remainingPetrol < 0){
+
+    data.remainingPetrol = 0;
+
+  }
+
+  data.history.unshift({
+
+    type:"Travel",
+
+    details:
+      `${distance} KM travelled → ${petrolUsed.toFixed(2)} L used`,
+
+    comment: comment || "-",
+
+    date:getISTDate()
+
+  });
+
+  saveData();
+
+  updateUI();
+
+  document.getElementById("distance").value = "";
+  document.getElementById("travelComment").value = "";
+
+}
+
+function resetData(){
+
+  const confirmReset =
+    confirm("Are you sure you want to clear all fuel and travel records?");
+
+  if(confirmReset){
+
+    const finalConfirm =
+      confirm("This action cannot be undone. Press OK again to DELETE all records.");
+
+    if(finalConfirm){
+
+      
+ // Preserve settings
+      const savedMileage = data.mileage;
+      const savedPetrolPrice = data.petrolPrice;
+
+      // Reset only fuel/travel data
+      data = {
+
+        mileage: savedMileage,
+        petrolPrice: savedPetrolPrice,
+        remainingPetrol: 0,
+        history: []
+
+      };
+
+
+      saveData();
+
+      document.getElementById("mileage").value = data.mileage;
+      document.getElementById("petrolPrice").value = data.petrolPrice;
+
+      updateUI();
+
+      alert("Fuel and travel records cleared successfully.");
+
+    }
+
+  }
+
+}
+
+function updateUI(){
+
+  document.getElementById("remainingPetrol").innerText =
+    data.remainingPetrol.toFixed(2) + " L";
+
+  const remainingDistance =
+    data.remainingPetrol * data.mileage;
+
+  document.getElementById("remainingDistance").innerText =
+    remainingDistance.toFixed(2) + " KM";
+
+  let total = 0;
+
+  data.history.forEach(item => {
+
+    if(item.amount){
+
+      total += item.amount;
+
+    }
+
+  });
+
+  document.getElementById("totalCost").innerText =
+    "₹" + total;
+
+  const table =
+    document.getElementById("historyTable");
+
+  table.innerHTML = "";
+
+  data.history.forEach(item => {
+
+    table.innerHTML += `
+
+      <tr>
+
+        <td>${item.date}</td>
+
+        <td class="${
+          item.type === "Fuel Refill"
+          ? "green"
+          : "red"
+        }">
+
+          ${item.type}
+
+        </td>
+
+        <td>${item.details}</td>
+
+        <td>${item.comment}</td>
+
+      </tr>
+
+    `;
+
+  });
+
+}
+
+updateUI();
+
+</script>
+
+</body>
+</html>
